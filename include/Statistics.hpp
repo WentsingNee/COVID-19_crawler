@@ -12,9 +12,9 @@
 #ifndef PNEUMONIAWUHAN2020_DXY_STATISTICS_HPP
 #define PNEUMONIAWUHAN2020_DXY_STATISTICS_HPP
 
-#include <cstdint>
-#include <iostream>
+#include <Count.hpp>
 
+#include <cstdint>
 #include <nlohmann/json_fwd.hpp>
 
 class Statistics
@@ -25,22 +25,14 @@ class Statistics
 		std::string imgUrl;
 		std::string dailyPic;
 
-		struct CountRemark
-		{
-				int diagnosed;
-				int suspected;
-				int dead;
-				int cured;
-
-				CountRemark() noexcept = default;
-				explicit CountRemark(const std::string & raw);
-		} countRemark;
+		Count count;
 
 	private:
-		static nlohmann::json getJSON();
+		static nlohmann::json getJSON(const std::string & text);
+		static Count parseCount(const std::string & raw);
 
 	public:
-		static Statistics get();
+		static Statistics get(const std::string & text);
 };
 
 #endif //PNEUMONIAWUHAN2020_DXY_STATISTICS_HPP

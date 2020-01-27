@@ -10,28 +10,22 @@
  */
 
 #include <Statistics.hpp>
+#include <log.hpp>
 
 #include <regex>
-#include <cpr/cpr.h>
+#include <iostream>
 #include <nlohmann/json.hpp>
 
-nlohmann::json Statistics::getJSON()
+nlohmann::json Statistics::getJSON(const std::string & text)
 {
-	constexpr const char URL[] = "https://3g.dxy.cn/newh5/view/pneumonia";
-	auto r = cpr::Get(cpr::Url{URL});
-
-	if (r.status_code != 200) {
-		std::cout << "status code: " << r.status_code << std::endl;
-	}
-
+	LOG(INFO_LEVEL, __FUNCTION__);
 	constexpr const char REGEX[] = R"(<script id="getStatisticsService">try \{ window.getStatisticsService = ([^<]*)}catch\(e\)\{}</script>)";
 	std::regex rgx(REGEX);
 	std::smatch sm;
 
-	if (!std::regex_search(r.text, sm, rgx) && sm.size() < 2) {
-		std::cerr << r.text << std::endl;
+	if (!std::regex_search(text, sm, rgx) && sm.size() < 2) {
 		for (int i = 0; i < sm.size(); ++i) {
-			std::cerr << "[" << i << "]" << sm[i] << std::endl;
+			LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 		}
 		throw std::runtime_error("No statistics");
 	}
@@ -42,7 +36,7 @@ nlohmann::json Statistics::getJSON()
 		json = nlohmann::json::parse(sm[1].str());
 	} catch (const nlohmann::json::parse_error & e) {
 		for (int i = 0; i < sm.size(); ++i) {
-			std::cerr << "[" << i << "]   " << sm[i] << std::endl;
+			LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 		}
 		throw std::runtime_error("Json parse failed!");
 	}
@@ -50,40 +44,50 @@ nlohmann::json Statistics::getJSON()
 }
 
 
-Statistics Statistics::get()
+Statistics Statistics::get(const std::string & text)
 {
-	nlohmann::json json = Statistics::getJSON();
+	LOG(INFO_LEVEL, __FUNCTION__);
+	nlohmann::json json = Statistics::getJSON(text);
 	Statistics ret;
 	ret.createTime = json["createTime"];
 	ret.modifyTime = json["modifyTime"];
-	ret.countRemark = Statistics::CountRemark(json["countRemark"]);
+	ret.count = Statistics::parseCount(json["countRemark"]);
 	return ret;
 }
 
-Statistics::CountRemark::CountRemark(const std::string & raw)
+Count Statistics::parseCount(const std::string & raw)
 {
+	LOG(INFO_LEVEL, __FUNCTION__);
 	using namespace std::string_literals;
 
+	Count count;
+
 	try {
-		constexpr const std::pair<int Statistics::CountRemark::*, const char*> GROUP[] = {
-				{&Statistics::CountRemark::diagnosed, "确诊"},
-				{&Statistics::CountRemark::suspected, "疑似"},
-				{&Statistics::CountRemark::dead,      "死亡"},
-				{&Statistics::CountRemark::cured,     "治愈"},
+		constexpr const std::pair<int Count::*, const char*> GROUP[] = {
+				{&Count::confirmed, "确诊"},
+				{&Count::suspected, "疑似"},
+				{&Count::dead,      "死亡"},
+				{&Count::cured,     "治愈"},
 		};
 
 		for (const auto &[pro, KEY] : GROUP) {
+			LOG(DEBUG_LEVEL, "KEY: ", KEY);
 			std::regex rgx(KEY + " (\\d+) 例"s);
 			std::smatch sm;
 			if (!std::regex_search(raw, sm, rgx) && sm.size() < 2) {
-				std::cerr << "Failed!" << std::endl;
-				std::cerr << "KEY: " << KEY << std::endl;
+				LOG(FATAL_LEVEL, "KEY: ", KEY);
+				for (int i = 0; i < sm.size(); ++i) {
+					LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
+				}
 				throw std::runtime_error("Parse failed");
 			}
-			this->*pro = std::stoi(sm[1].str());
+			LOG(INFO_LEVEL, "KEY: ", KEY, "  ", sm[1].str());
+			count.*pro = std::stoi(sm[1].str());
 		}
 	} catch (...) {
 		std::cerr << raw << std::endl;
 		throw;
 	}
+
+	return count;
 }

@@ -12,5 +12,5 @@ endif()
 
 
 include_directories(include)
-add_executable(PneumoniaWuhan2020 src/main.cpp src/Statistics.cpp)
+add_executable(PneumoniaWuhan2020 src/main.cpp src/Statistics.cpp src/AreaStat.cpp)
 target_link_libraries(PneumoniaWuhan2020 -lcpr -lsqlite3 -lpthread)
