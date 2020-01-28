@@ -29,7 +29,7 @@ class Statistics
 
 	private:
 		static nlohmann::json getJSON(const std::string & text);
-		static Count parseCount(const std::string & raw);
+		static Count parseCount(const nlohmann::json & json);
 
 	public:
 		static Statistics get(const std::string & text);

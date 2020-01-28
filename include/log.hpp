@@ -41,7 +41,6 @@ struct FATAL_LEVEL
 template <typename Level, typename ... Args>
 void __log(const char * file, int line, Args&& ... args)
 {
-//	if constexpr ()
 	Level::stream << "[" << Level::name << "] " << file << ":" << line << "   ";
 	(Level::stream << ... << args);
 	Level::stream << std::endl;

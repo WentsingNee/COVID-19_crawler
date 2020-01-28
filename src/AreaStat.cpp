@@ -26,7 +26,7 @@ nlohmann::json AreaStat::getJSON(const std::string & text)
 		std::smatch sm;
 
 		if (!std::regex_search(text, sm, rgx) && sm.size() < 2) {
-			for (int i = 0; i < sm.size(); ++i) {
+			for (std::smatch::size_type i = 0; i < sm.size(); ++i) {
 				LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 			}
 			throw std::runtime_error("No area statistics");
@@ -36,7 +36,7 @@ nlohmann::json AreaStat::getJSON(const std::string & text)
 		try {
 			json = nlohmann::json::parse(sm[1].str());
 		} catch (const nlohmann::json::parse_error& e) {
-			for (int i = 0; i < sm.size(); ++i) {
+			for (std::smatch::size_type i = 0; i < sm.size(); ++i) {
 				LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 			}
 			throw std::runtime_error("Json parse failed!");

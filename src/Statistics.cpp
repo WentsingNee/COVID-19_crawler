@@ -24,7 +24,7 @@ nlohmann::json Statistics::getJSON(const std::string & text)
 	std::smatch sm;
 
 	if (!std::regex_search(text, sm, rgx) && sm.size() < 2) {
-		for (int i = 0; i < sm.size(); ++i) {
+		for (std::smatch::size_type i = 0; i < sm.size(); ++i) {
 			LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 		}
 		throw std::runtime_error("No statistics");
@@ -35,7 +35,7 @@ nlohmann::json Statistics::getJSON(const std::string & text)
 	try {
 		json = nlohmann::json::parse(sm[1].str());
 	} catch (const nlohmann::json::parse_error & e) {
-		for (int i = 0; i < sm.size(); ++i) {
+		for (std::smatch::size_type i = 0; i < sm.size(); ++i) {
 			LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
 		}
 		throw std::runtime_error("Json parse failed!");
@@ -51,41 +51,37 @@ Statistics Statistics::get(const std::string & text)
 	Statistics ret;
 	ret.createTime = json["createTime"];
 	ret.modifyTime = json["modifyTime"];
-	ret.count = Statistics::parseCount(json["countRemark"]);
+	ret.count = Statistics::parseCount(json);
 	return ret;
 }
 
-Count Statistics::parseCount(const std::string & raw)
+Count Statistics::parseCount(const nlohmann::json & json)
 {
 	LOG(INFO_LEVEL, __FUNCTION__);
 	using namespace std::string_literals;
 
-	Count count;
+	Count count{};
 
 	try {
 		constexpr const std::pair<int Count::*, const char*> GROUP[] = {
-				{&Count::confirmed, "确诊"},
-				{&Count::suspected, "疑似"},
-				{&Count::dead,      "死亡"},
-				{&Count::cured,     "治愈"},
+				{&Count::confirmed, "confirmedCount"},
+				{&Count::suspected, "suspectedCount"},
+				{&Count::dead,      "deadCount"},
+				{&Count::cured,     "curedCount"},
 		};
 
 		for (const auto &[pro, KEY] : GROUP) {
 			LOG(DEBUG_LEVEL, "KEY: ", KEY);
-			std::regex rgx(KEY + " (\\d+) 例"s);
-			std::smatch sm;
-			if (!std::regex_search(raw, sm, rgx) && sm.size() < 2) {
-				LOG(FATAL_LEVEL, "KEY: ", KEY);
-				for (int i = 0; i < sm.size(); ++i) {
-					LOG(FATAL_LEVEL, "[", i, "]  ", sm[i]);
-				}
-				throw std::runtime_error("Parse failed");
+			if (json.find(KEY) == json.cend()) {
+				LOG(FATAL_LEVEL, "No KEY found: ", KEY);
+				throw std::runtime_error("No KEY found");
 			}
-			LOG(INFO_LEVEL, "KEY: ", KEY, "  ", sm[1].str());
-			count.*pro = std::stoi(sm[1].str());
+			int c = json[KEY];
+			LOG(INFO_LEVEL, KEY, ": ", c);
+			count.*pro = c;
 		}
 	} catch (...) {
-		std::cerr << raw << std::endl;
+		LOG(FATAL_LEVEL, "json: ", json.dump());
 		throw;
 	}
 

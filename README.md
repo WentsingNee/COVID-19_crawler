@@ -12,3 +12,7 @@
 * [nlohmann json](https://github.com/azadkuh/nlohmann_json_release), a C++ JSON parser.
 * [sqlite3pp](https://github.com/iwongu/sqlite3pp), a C++ wrapper of SQLite3 API.
 
+
+# Note
+
+If your GCC version is under 9.1.0 (7.x, 8.x, etc.), you need to link libstdc++fs.a .
