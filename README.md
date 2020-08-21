@@ -1,5 +1,5 @@
-# Pneumonia Wuhan 2020
-武汉肺炎疫情动态爬虫
+# COVID-19_crawler
+COVID-19 疫情动态爬虫
 
 数据来源: [丁香园](https://3g.dxy.cn/newh5/view/pneumonia).
 
